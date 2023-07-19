@@ -348,8 +348,9 @@ g_region
 
 ```{r}
 
-ggsave("country_plot.pdf", plot = g_country, width = 10, height = 6)
-ggsave("region_plot.pdf", plot = g_region, width = 10, height = 6)
+ggsave("country_plot.png", plot = g_country, width = 10, height = 6, dpi = 600)
+ggsave("region_plot.png", plot = g_region, width = 10, height = 6, dpi = 600)
+
 
 
 ```

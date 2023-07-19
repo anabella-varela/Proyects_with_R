@@ -16,7 +16,7 @@ For the data viz I did a stream graph (also sometimes called “Theme River”).
 - The global mean emission has been from 4.38 in 1990 to 4.06 mt/capita in 2019
 - There is a significative difference between the CO2 emissions among the world regions and countries.
 - Industrialized countries have higher per capita emissions than less industrialized nations.
-- When visualizing the top 3 countries with more CO2 emissions there is a tendency  of reduction of the emissions from 2000. The tendency is not evident when analyzind the top 3 regions with more CO2 emissions. 
+- When visualizing the top 3 countries with more CO2 emissions there is a tendency  of reduction of the emissions from 2000. [Top 3 countries](https://github.com/anabella-varela/Proyects_with_R/blob/main/CO2_emission/country_plot.pdf)
 
-[Top 3 countries](country_plot.pdf)
-[Top 3 regions](region_plot.pdf)
+The tendency is not evident when analyzind the top 3 regions with more CO2 emissions. 
+[Top 3 regions](https://github.com/anabella-varela/Proyects_with_R/blob/main/CO2_emission/region_plot.pdf)
