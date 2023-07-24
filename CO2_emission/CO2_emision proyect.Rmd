@@ -11,8 +11,9 @@ I will make a basic analysis with R.
 
 Import dataset
 ```{r}
-df <- read.csv("~/2. Anabella/0.DATA_ANALYTICS/Proyecto R/CO2emision/CO2_emission.csv")
-df
+df <- read.csv("~/2. Anabella/4.GITHUB/Proyects_with_R/CO2_emission/CO2_emission.csv")
+str(df)
+
 ```
 ## DATA CLEANING  
 
@@ -50,6 +51,60 @@ summary (df)
 
 ```
 
+This is interestying. I can see that the mean CO2 emissions is arround 4 but the maximun emissions are arround 30 to 40 . I will plot this trend for a better understanding.
+
+```{r}
+df_data <- df[,4:ncol(df)]
+mean_co2_per_year <- colMeans(df_data, na.rm = TRUE)
+max_co2_per_column <- apply(df_data, 2, max, na.rm = TRUE)
+min_co2_per_column <- apply(df_data, 2, min, na.rm = TRUE)
+
+
+
+print(mean_co2_per_year)
+print(max_co2_per_column)
+print(min_co2_per_column)
+```
+
+## Plot of CO2 emissions over time
+
+```{r}
+# Load the required libraries
+library(ggplot2)
+library(gganimate)
+library(transformr)
+
+#Years vector
+years = seq(1990, 2019)
+
+# I have the vectors mean_co2_per_year,min and max_values_per_column
+# Create a data.frame to store the data
+df_plot <- data.frame(Year = years,
+                      Mean_CO2_Emissions = mean_co2_per_year,
+                      Max_CO2_Emissions = max_co2_per_column,
+                      Min_CO2_Emissions = min_co2_per_column)
+
+# Create a line plot 
+p <- ggplot(df_plot, aes(x = Year)) +
+  geom_line(aes(y = Mean_CO2_Emissions, color = "Mean CO2 Emissions"), size = 1.5) +
+  geom_line(aes(y = Max_CO2_Emissions, color = "Max CO2 Emissions"), size = 1.5) +
+  geom_line(aes(y = Min_CO2_Emissions, color = "Min CO2 Emissions"), size = 1.5) +
+  labs(title = "CO2 Emissions Over Time",
+       x = "Year",
+       y = "CO2 Emissions",
+       color = "Emission Type") +
+  scale_color_manual(values = c("red4","darkorange", "deepskyblue4")) 
+
+p
+
+  
+```
+```{r}
+ggsave("co2_overtime.png", plot = p, width = 10, height = 6, dpi = 600)
+
+```
+
+While the mean and minimun emissions have been stable over the years, the maximun emissions had a peak arround year 2000.
 I will add a new column with the mean values of each country and test if there are significant differences among them with one way ANOVA test
 
 ```{r}
@@ -60,6 +115,43 @@ df
 ```{r}
 library(dplyr)
 df_country_sorted <- df %>% arrange(desc(country_mean))
+
+#Bar plot for the countries emissions 
+
+# Here, we are using the "Dark2" color palette from RColorBrewer
+library(RColorBrewer)
+
+color_palette <- brewer.pal(n = 7, name = "Dark2") 
+
+
+b <- ggplot(df_country_sorted, aes(x = reorder(country_code, +country_mean), y = country_mean, fill = region)) +
+  geom_bar(stat = "identity") +  # Create the bar chart
+  coord_flip() +  # Flip the x and y-axis to make a horizontal bar chart
+labs(title = "Mean CO2 Emissions by Region",
+     subtitle = "Each bar is one country",
+       x = NULL, y = "Mean CO2 Emissions",
+       fill = "World Region") +
+  theme_minimal(base_size = 12) +
+  theme (
+  axis.text.x =NULL,
+  axis.text.y = element_text(size = 1, hjust = 1),
+  plot.background = element_rect(fill = "grey88", color = NA),
+  panel.background = element_rect(fill = NA, color = NA)
+  )+
+  scale_fill_manual(values = color_palette)  # Set the defined color palette
+
+
+b
+
+ggsave("co2_country.png", plot = b, width = 10, height = 6, dpi = 600)
+
+
+
+```
+This plot shows that Middle East& North Africa has the countries with more CO2 emissions followed by North america ans Europe. Also, South asia and latin america are in the tail of the plot.  Lets support that with some statistic.
+
+
+```{r}
 top_five_country <- slice(df_country_sorted, 1:5)
 ```
  
@@ -78,7 +170,7 @@ model <- aov(country_mean ~ region, data = df)
 summary(model)
 ```
 
-The results show that there is a significant difference between at least two of the means.
+The results show that there is a significant difference between at least two of the Regions means.
 To see with means are diferent I will make a LSD Fisher's test
 
 **LSD Fisher's Test**  
@@ -97,7 +189,7 @@ library(agricolae)
 ```{r}
 LSD_2019 <- LSD.test(model2019, "region", alpha = 0.05, console = TRUE)
 ```
-North America, middle East and Europe are the regions with more C=2 emisions in 2019
+North America, middle East and Europe are the regions with more Co2 emisions in 2019
 
 
 * 1990 to 2019 emissions
@@ -200,16 +292,12 @@ theme_update(
 
 ```{r}
 # Define the color palette
-pal_country <- c(
-   "#FF9933", 
-  "#FF33B1",
-  "#33FFB1"
-  )
-pal_region <-  c(
-  "#3399FF",  # Blue
-  "#33FF33",  # Green
-  "#3366CC"   # Another shade of Blue
-)
+reds_palette <- colorRampPalette(colors = c("#FFCCCC", "#FF6666", "#FF0000"))
+
+# Generate the palette with three shades of red
+pal <- reds_palette(3)
+
+
 
 ```
 trick to make the start and end of the stream smoother.
@@ -287,7 +375,7 @@ g_country <- long_df_countries_smooth %>%
     guide = "none"
   ) +
   scale_fill_manual(
-    values = pal_country,
+    values = pal,
     name = NULL
   ) 
 
@@ -312,11 +400,11 @@ g_region <- grouped_long_df_regions_smooth %>%
   ) +
   scale_color_manual(
     expand = c(0, 0),
-    values = pal_region,
+    values = pal,
     guide = "none"
   ) +
   scale_fill_manual(
-    values = pal_region,
+    values = pal,
     name = NULL
   ) 
   
