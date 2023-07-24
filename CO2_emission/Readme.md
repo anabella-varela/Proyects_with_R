@@ -20,6 +20,7 @@ For this analysis, I utilized the R programming language for data cleaning, data
 - There are significant differences in CO2 emissions among world regions and countries.
 - Industrialized countries tend to have higher per capita emissions than less industrialized nations.
 - The countries with the highest CO2 emissions are primarily located in the Middle East & North Africa region, followed by North America and Europe.
+![Alt text](co2_country.png)
 - When visualizing the top 3 countries with more CO2 emissions there is a reduction of the emissions from 2000. 
 ![Alt text](country_plot.png)
 - However, a clear trend is not evident when analyzing the top 3 regions with the highest CO2 emissions. 
