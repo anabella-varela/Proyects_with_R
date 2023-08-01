@@ -2,12 +2,33 @@
 title: "CO2_emissions"
 author: "Anabella"
 date: "July 2023"
-output: pdf_document
+
 ---
-# CO2 emisions
-With the dataset downloaded in
+CO2 emissions
+The dataset was downloaded from
 [Kaggle](https://www.kaggle.com/datasets/koustavghosh149/co2-emission-around-the-world)
-I will make a basic analysis with R.
+
+Through this project, I aspire to showcase my proficiency in handling small datasets efficiently and effectively, proving that valuable insights can be extracted even with limited resources. I will make a basic EDA with R.
+
+```{r}
+#Load all the libraries
+library(ggplot2)
+library(gganimate)
+library(transformr)
+library(dplyr)
+library(RColorBrewer)
+library(agricolae)
+library(tidyverse)
+library(viridis)
+library(tidyr)
+library(fuzzyjoin)
+library(ggstream)
+library(colorspace)
+library(ggtext)
+library(cowplot)
+
+```
+
 
 Import dataset
 ```{r}
@@ -17,161 +38,268 @@ str(df)
 ```
 ## DATA CLEANING  
 
-### Removing null rows and repeated column
-
-In the code below, CO2_emission[, 5:34] selects all columns from 1990 to 2019 (columns 5 to 34), and complete.cases(CO2_emission[, 5:34]) returns a logical vector indicating which rows have complete data in those columns. The subset operator [ is then used to select only those rows from the original data frame df.
-
+### Missing values
 ```{r}
-df <- df[complete.cases(df[,5:35]), ] 
-df
+# Count the number of null cells in the data frame
+num_null_cells <- sum(is.na(df))
+
+# Print the result
+cat("Number of null cells:", num_null_cells, "\n")
 ```
-Now I will Remove 2019b and Indicator.name columns
+Te dataframe has 770 null cells. But how many rows have at least one missing value and how many have no value at all?
 
 ```{r}
-df <- df[, -ncol(df)]
-df
+# Count the number of null rows in the data frame
+num_null_rows <- sum(apply(is.na(df[,5:35]), 1, all))
+
+# Count the number of rows with at least one NA value
+num_rows_withNA <- sum(apply(is.na(df[,5:35]), 1, any))
+
+# Count the number of null columns in the data frame
+num_null_cols <- sum(apply(is.na(df[,5:35]), 2, all))
+
+# Count the number of columns with at least one NA value
+num_cols_withNA <- sum(apply(is.na(df[,5:35]), 2, any))
+
+# Print the result
+cat("Number of null rows:", num_null_rows, "\n")
+cat("Number of rows with NA:", num_rows_withNA, "\n")
+cat("Number of null columns:", num_null_cols, "\n")
+cat("Number of col with NA:", num_cols_withNA, "\n")
+
+```
+Next I will delete the 24 null rows from the dataset.
+```{r}
+df_clean <- df[-which(apply(is.na(df[,5:35]), 1, all)), ]
+str(df_clean)
+```
+
+```{r}
+# Count the number of null rows in the data frame
+num_null_rows <- sum(apply(is.na(df_clean[,5:35]), 1, all))
+
+# Count the number of rows with at least one NA value
+num_rows_withNA <- sum(apply(is.na(df_clean[,5:35]), 1, any))
+
+# Count the number of null columns in the data frame
+num_null_cols <- sum(apply(is.na(df_clean[,5:35]), 2, all))
+
+# Count the number of columns with at least one NA value
+num_cols_withNA <- sum(apply(is.na(df_clean[,5:35]), 2, any))
+
+# Print the result
+cat("Number of null rows:", num_null_rows, "\n")
+cat("Number of rows with NA:", num_rows_withNA, "\n")
+cat("Number of null columns:", num_null_cols, "\n")
+cat("Number of col with NA:", num_cols_withNA, "\n")
+
+
+```
+I have succesfully deleted the null rows and there are still the 8 rows with missing values. How many missing values have each of these 8 rows?
+
+```{r}
+#To visualize the 8 rows with NAs. 
+rows_with_missing_values <- df_clean[!complete.cases(df_clean), ]
+
+# Count the number of null cells in the data frame
+num_null_cells <- sum(is.na(df_clean))
+
+# Print the result
+cat("Number of null cells:", num_null_cells, "\n")
+```
+The 8 rows (coutries)  have 26 missing values in total.
+
+
+## Data preprocessing
+Now I will Remove 2019b (repeted column) and Indicator.name columns
+
+```{r}
+#remove the last column
+df_clean <- df_clean[, -ncol(df)]
 
 # delete the Indicator.name column
-df <- subset(df, select= -Indicator.Name) 
+df_clean <- subset(df_clean, select= -Indicator.Name) 
+
+df_clean
 ```
 
 df[, -ncol(df)] subsets the original data frame df by selecting all rows and all columns except the last column. The resulting data frame has the same number of rows as the original, but one less column.
 
-### Rename column names
+Rename column names
 
 ```{r}
-colnames(df)[colnames(df) %in% c("Country.Name", "Region")] <- c("country_name", "region")
+colnames(df_clean)[colnames(df_clean) %in% c("Country.Name", "Region")] <- c("country_name", "region")
 
-df
+df_clean
 ```
+- I will rearrage the dataset from wide to long format, creating separate rows for each year. 
 
+```{r}
+#library(tidyr)
+
+# Reshape the dataset using tidyr::pivot_longer
+long_df <- df_clean[, -ncol(df_clean)] %>%
+  pivot_longer(cols = -c(country_name, country_code, region),
+               names_to = "year",
+               values_to = "co2_emissions_metric_tons_per_capita")
+
+# remove the "X" prefix from the year column and convert it to a numeric data type
+long_df$year <- as.numeric(gsub("X", "", long_df$year))
+
+#check the structure of the df 
+str(long_df)
+
+# Count the number of null cells in the data frame
+num_null_cells <- sum(is.na(long_df))
+
+# Print the result
+cat("Number of null cells in the long data frame is:", num_null_cells, "\n")
+
+```
 ## DATA ANALYSIS  
 ```{r}
-summary (df)
+summary (long_df)
 
 ```
 
-This is interestying. I can see that the mean CO2 emissions is arround 4 but the maximun emissions are arround 30 to 40 . I will plot this trend for a better understanding.
+This is interestying. I can see that the mean CO2 emissions is arround 4 mt per capita but the maximun emissions is 50tm per capita !. I will plot this trend for a better understanding.
 
 ```{r}
-df_data <- df[,4:ncol(df)]
-mean_co2_per_year <- colMeans(df_data, na.rm = TRUE)
-max_co2_per_column <- apply(df_data, 2, max, na.rm = TRUE)
-min_co2_per_column <- apply(df_data, 2, min, na.rm = TRUE)
+world_summary <- long_df %>%
+  group_by(year) %>%
+  summarise(
+    mean_co2 = mean(co2_emissions_metric_tons_per_capita, na.rm = TRUE),
+    median_co2 = median(co2_emissions_metric_tons_per_capita, na.rm = TRUE),
+    max_co2 = max(co2_emissions_metric_tons_per_capita, na.rm = TRUE),
+    min_co2 = min(co2_emissions_metric_tons_per_capita, na.rm = TRUE)#Setting na.rm = TRUE tells R to remove the NA values before calculating the mean. IMPORTANT!
+  )
 
-
-
-print(mean_co2_per_year)
-print(max_co2_per_column)
-print(min_co2_per_column)
 ```
 
-## Plot of CO2 emissions over time
+
+Calculate country means in the df_clean data frame.
+The NA values are ignored in the row mean calculations, so the resulting "country_mean" column will not contain any NA values.
+
 
 ```{r}
-# Load the required libraries
-library(ggplot2)
-library(gganimate)
-library(transformr)
+country_summary <- long_df %>%
+  group_by(region, country_name) %>%
+  summarise(
+    mean_co2 = mean(co2_emissions_metric_tons_per_capita, na.rm = TRUE),
+    median_co2 = median(co2_emissions_metric_tons_per_capita, na.rm = TRUE),
+    max_co2 = max(co2_emissions_metric_tons_per_capita, na.rm = TRUE),
+    min_co2 = min(co2_emissions_metric_tons_per_capita, na.rm = TRUE)) %>% #Setting na.rm = TRUE tells R to remove the NA values before calculating the mean. IMPORTANT!
+    arrange(desc(mean_co2))
+     
+region_summary <- long_df %>%
+  group_by(region) %>%
+  summarise( 
+    mean_co2 = mean(co2_emissions_metric_tons_per_capita, na.rm = TRUE),
+    median_co2 = median(co2_emissions_metric_tons_per_capita, na.rm = TRUE),
+    max_co2 = max(co2_emissions_metric_tons_per_capita, na.rm = TRUE),
+    min_co2 = min(co2_emissions_metric_tons_per_capita, na.rm = TRUE)) %>% #Setting na.rm = TRUE tells R to remove the NA values before calculating the mean. IMPORTANT!
+    arrange(desc(mean_co2)
+  )
 
-#Years vector
-years = seq(1990, 2019)
+```
 
-# I have the vectors mean_co2_per_year,min and max_values_per_column
-# Create a data.frame to store the data
-df_plot <- data.frame(Year = years,
-                      Mean_CO2_Emissions = mean_co2_per_year,
-                      Max_CO2_Emissions = max_co2_per_column,
-                      Min_CO2_Emissions = min_co2_per_column)
+Countries and regions with the biggest CO2 emissions are 
+
+```{r}
+print(head(country_summary))
+
+```
+
+
+```{r}
+print(region_summary[1:3,])
+```
+The 6 countries with the lowest CO2 emissions are
+
+```{r}
+tail(country_summary)
+```
+
+Lowest emissors
+```{r}
+region_summary[5:7,]
+```
+
+ 
+# DATA VIZ
+
+LINE PLOT
+
+```{r}
+# Load the required libraries ( here I need ggplot2, gganimate, transformr )
+
 
 # Create a line plot 
-p <- ggplot(df_plot, aes(x = Year)) +
-  geom_line(aes(y = Mean_CO2_Emissions, color = "Mean CO2 Emissions"), size = 1.5) +
-  geom_line(aes(y = Max_CO2_Emissions, color = "Max CO2 Emissions"), size = 1.5) +
-  geom_line(aes(y = Min_CO2_Emissions, color = "Min CO2 Emissions"), size = 1.5) +
+Fig1 <- ggplot(world_summary, aes(x = year)) +
+  geom_line(aes(y = mean_co2, color = "Mean CO2 Emissions"), size = 1) +
+  geom_line(aes(y = median_co2, color = "Median CO2 Emissions"), size = 1) +
+  geom_line(aes(y = max_co2, color = "Max CO2 Emissions"), size = 1) +
+  geom_line(aes(y = min_co2, color = "Min CO2 Emissions"), size = 1) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())+
   labs(title = "CO2 Emissions Over Time",
        x = "Year",
        y = "CO2 Emissions",
        color = "Emission Type") +
-  scale_color_manual(values = c("red4","darkorange", "deepskyblue4")) 
+  scale_color_manual(values = c("red4","darkorange", "yellow", "deepskyblue4")) 
 
-p
+Fig1
 
-  
 ```
 ```{r}
-ggsave("co2_overtime.png", plot = p, width = 10, height = 6, dpi = 600)
+ggsave("Fig1.png", plot = Fig1, width = 10, height = 6, dpi = 600)
 
 ```
 
 While the mean and minimun emissions have been stable over the years, the maximun emissions had a peak arround year 2000.
-I will add a new column with the mean values of each country and test if there are significant differences among them with one way ANOVA test
+
+BAR PLOT
 
 ```{r}
-df$country_mean <- rowMeans(df[,5:ncol(df)], na.rm = TRUE)
-df
 
-```
-```{r}
-library(dplyr)
-df_country_sorted <- df %>% arrange(desc(country_mean))
+# Here, we are using the "Dark2" color palette from RColorBrewer library
 
-#Bar plot for the countries emissions 
+color_palette <- brewer.pal(n = 7, name = "Dark2")
 
-# Here, we are using the "Dark2" color palette from RColorBrewer
-library(RColorBrewer)
-
-color_palette <- brewer.pal(n = 7, name = "Dark2") 
-
-
-b <- ggplot(df_country_sorted, aes(x = reorder(country_code, +country_mean), y = country_mean, fill = region)) +
-  geom_bar(stat = "identity") +  # Create the bar chart
-  coord_flip() +  # Flip the x and y-axis to make a horizontal bar chart
-labs(title = "Mean CO2 Emissions by Region",
-     subtitle = "Each bar is one country",
-       x = NULL, y = "Mean CO2 Emissions",
-       fill = "World Region") +
-  theme_minimal(base_size = 12) +
+Fig2 <- ggplot(country_summary, aes(x = reorder(country_name, +mean_co2), y = mean_co2, fill = region)) +
+      geom_bar(stat = "identity") +  # Create the bar chart
+      coord_flip() +  # Flip the x and y-axis to make a horizontal bar chart
+      labs(title = "World mean CO2 emissions (1990-2019)",
+      subtitle = "Each bar is one country",
+      x = NULL, y = "Mean CO2 Emissions",
+      fill = "World Region") +
+      theme_minimal(base_size = 12) +
   theme (
   axis.text.x =NULL,
-  axis.text.y = element_text(size = 1, hjust = 1),
+  axis.text.y = element_blank(),#I did not put the country labes because they would be unreadable
   plot.background = element_rect(fill = "grey88", color = NA),
   panel.background = element_rect(fill = NA, color = NA)
   )+
   scale_fill_manual(values = color_palette)  # Set the defined color palette
 
+ggsave("Fig2.png", plot = Fig2, width = 10, height = 6, dpi = 600)
 
-b
-
-ggsave("co2_country.png", plot = b, width = 10, height = 6, dpi = 600)
-
-
+Fig2
 
 ```
-This plot shows that Middle East& North Africa has the countries with more CO2 emissions followed by North america ans Europe. Also, South asia and latin america are in the tail of the plot.  Lets support that with some statistic.
+This plot shows that Middle East& North Africa (pink) has the countries with more CO2 emissions followed by North america (green). Also, Sub-Saharan Africa countries are in the tail of the plot.  Lets support that with some statistic.
 
 
-```{r}
-top_five_country <- slice(df_country_sorted, 1:5)
-```
- 
  **ANOVA test**
-I will do a ANOVA test in order to see the statistical significance of the differences in means between the regions   
-* 2019 emissions
-```{r}
-df2019 <- subset(df[,c("country_name", "country_code", "region", "X2019")])
-model2019 <- aov(X2019 ~ region, data = df2019)
-summary(model2019)
-```
+I will do a ANOVA test in order to see if there is statistical significance of the differences in means between the regions
 
-* 1990 to 2019 emissions
 ```{r}
-model <- aov(country_mean ~ region, data = df)
-summary(model)
+ANOVAmodel <- aov(mean_co2 ~ region, data = country_summary)
+summary(ANOVAmodel)
 ```
 
 The results show that there is a significant difference between at least two of the Regions means.
-To see with means are diferent I will make a LSD Fisher's test
+To see wich of the means are diferent I will make a LSD Fisher's test
 
 **LSD Fisher's Test**  
 *LSD (Least Significant Difference) Fisher test, also known as the Fisher's Least Significant Difference test, is a post-hoc test used after an ANOVA (Analysis of Variance) test to determine which pairs of group means are significantly different from each other. It compares the difference between two means to the average variability of all the means, as estimated from the ANOVA results.
@@ -182,74 +310,99 @@ The LSD test works by calculating a critical value based on the alpha level (typ
 
 Load the library
 ```{r}
-library(agricolae)
+#library(agricolae)
 ```
 
-* 2019 emissions
+
 ```{r}
-LSD_2019 <- LSD.test(model2019, "region", alpha = 0.05, console = TRUE)
+RegionLSD <- LSD.test(ANOVAmodel, "region", alpha = 0.05, console = TRUE)
+
 ```
-North America, middle East and Europe are the regions with more Co2 emisions in 2019
+The insight that this test gives is that Regions labeled with the same letter are not significantly different in terms of mean emissions. For example, "East Asia" and "Latin America" have different mean emissions (4.2 and 2.9, respectively), but they are both assigned the letter "d" which means their difference is not statistically significant (for a significance level of 0.05)
 
-
-* 1990 to 2019 emissions
 ```{r}
-RegionLSD <- LSD.test(model, "region", alpha = 0.05, console = TRUE)
+
+RegionLSD$means
+
 
 ```
-## DATA VIZ
 
-Now that know the data, I will do a data viz over time with the top 5 countries and the top 3 regions. This code was adapted from 
-title: "TidyTuesday 2020/27 - X-Men by Claremont Run Project"
-author: "Cedric Scherer"
-date: "30th of June 2020"
+Here I can see  the dispersion or spread of the data points around the mean. A larger standard deviation indicates greater variability in the emissions within a region, while a smaller standard deviation suggests less variability and more consistency in the emissions. Although Middle East is the second region with more CO2 emissions, there is a lot of variability in the CO2 amissions among the countries of the different regions.
+I am interested to plot the means with the SE instead of the STD. I will have to calculate it
+
+```{r}
+
+# Set up the PNG device for saving the plot
+png("Fig3.png", width = 10, height = 6, units = "in", res = 600)
+
+# Plot the base R plot
+plot(RegionLSD, 
+     variation="SD", 
+     main = "Mean CO2 emissions by world region ± SD",
+     ylab = "co2 mt emission per capita",
+     ylim = c(0,25),
+     las= 2,
+    cex.names = 0.6)
+
+# Close the device to save the plot as Fig3.png
+dev.off()
+
+
+```
+
+BOX PLOT
+
+With the results obtained from the ANOVA I will make a box plot
+```{r}
+#library(tidyverse) library(viridis) library(ggplot2)
+
+bplot <- country_summary %>% 
+  group_by(region) %>% # the subsequent plot will have separate box plots for each region.
+  ggplot(aes(x = reorder(region, -mean_co2), y = mean_co2, fill = region))+
+  stat_boxplot(
+    geom = "errorbar",      # Bigotes
+    width = 0.2) +
+  geom_boxplot(
+    outlier.colour = "red", # Color de los valores atípicos
+    alpha = 0.9) +        
+  geom_jitter(color="black", size=0.4, alpha=0.9) +  # Add jittered points for better visibility
+  labs(x = "Regions", y = "Means", title = "Box Plot of Means by Region") +
+  theme_minimal()+
+  scale_fill_viridis(discrete = TRUE, alpha=0.4)+
+    theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+        legend.position = "none",
+     plot.background = element_rect(fill = "grey88", color = NA),
+  panel.background = element_rect(fill = NA, color = NA))
+
+ggsave("Fig3.png", plot = bplot, width = 10, height = 6, dpi = 600)
+bplot
+
+```
+I can see the great dispersion of data in the Middle East and East Asia pacific
+
+
+## STREAM GRAPH
+
+Now I will do a data viz over time with the top 5 countries and the top 3 regions. This code was adapted from 
+Cedric Scherer "TidyTuesday 2020/27 - X-Men by Claremont Run Project"
 github link: https://github.com/z3tt/TidyTuesday/blob/main/R/2020_27_ClaremontRunXMen.Rmd
 
-- First I will rearrage the dataset from wide to long format, creating separate rows for each year. 
 
-```{r}
-library(tidyr)
-
-# Reshape the dataset using tidyr::pivot_longer
-long_df <- df[, -ncol(df)] %>%
-  pivot_longer(cols = -c(country_name, country_code, region),
-               names_to = "year",
-               values_to = "co2_emissions_metric_tons_per_capita")
-
-# remove the "X" prefix from the year column and convert it to a numeric data type
-long_df$year <- as.numeric(gsub("X", "", long_df$year))
-
-```
-
-```{r}
-#check the structure of the df 
-str(long_df)
-unique_levels <- unique(df$region)
-print(unique_levels)
-
-```
 ### Data definition
 
 ```{r}
 top_countries_codes <- c("QAT", "ARE", "BHR")
-long_df_countries <- filter(long_df, country_code %in% top_countries_codes)
+top_countries <- filter(long_df, country_code %in% top_countries_codes)
 
 top_regions <- c("North America", "Middle East & North Africa", "Europe & Central Asia")
-long_df_regions <- filter(long_df, region %in% top_regions)
+top_regions <- filter(long_df, region %in% top_regions)
 
 ```
 
 
-```{r}
-# Load packages
-library(tidyverse)
-library(fuzzyjoin)
-library(ggstream)
-library(colorspace)
-library(ggtext)
-library(cowplot)
+for this section i will use the packages tidyverse, fuzzyjoin, ggstream, colorspace, ggtext, cowplot
 
-```
 
 ```{r}
 #setting ggplot theme
@@ -297,60 +450,67 @@ reds_palette <- colorRampPalette(colors = c("#FFCCCC", "#FF6666", "#FF0000"))
 # Generate the palette with three shades of red
 pal <- reds_palette(3)
 
-
-
 ```
 trick to make the start and end of the stream smoother.
 
 ```{r}
-df_smooth_country <- long_df_countries %>%
+df_smooth_country <- top_countries %>%
   group_by(country_name, country_code, region) %>%
   slice(1:4) %>%
   mutate(
     year = c(
-      min(long_df_countries$year) - 5,
-      min(long_df_countries$year) - 1,
-      max(long_df_countries$year) + 1,
-      max(long_df_countries$year) + 5
+      min(top_countries$year) - 5,
+      min(top_countries$year) - 1,
+      max(top_countries$year) + 1,
+      max(top_countries$year) + 5
       ),
     co2_emissions_metric_tons_per_capita = c(0, 5, 5, 0),
   )
 
-df_smooth_region <- long_df_regions %>%
+df_smooth_region <- top_regions %>%
   group_by(region) %>%
   slice(1:4) %>%
   mutate(
     year = c(
-      min(long_df_regions$year) - 5,
-      min(long_df_regions$year) - 1,
-      max(long_df_regions$year) + 1,
-      max(long_df_regions$year) + 5
+      min(top_regions$year) - 5,
+      min(top_regions$year) - 1,
+      max(top_regions$year) + 1,
+      max(top_regions$year) + 5
       ),
     co2_emissions_metric_tons_per_capita = c(0, 5, 5, 0),
   )
 
 #bind dataframes
-long_df_countries_smooth <- long_df_countries %>% bind_rows(df_smooth_country)
+top_countries_smooth <- top_countries %>% bind_rows(df_smooth_country)
 
-long_df_regions_smooth  <- long_df_regions %>% bind_rows(df_smooth_region)
+top_regions_smooth  <- top_regions %>% bind_rows(df_smooth_region)
 
 
-str(long_df_regions_smooth)
+#group countries by region
 
-```
-```{r}
-grouped_long_df_regions_smooth <- long_df_regions_smooth %>%
+grouped_top_regions_smooth <- top_regions_smooth %>%
   group_by(region, year) %>%
   summarize(avg_co2_emissions = mean(co2_emissions_metric_tons_per_capita), .groups = "drop")
 
-str(grouped_long_df_regions_smooth)
+str(grouped_top_regions_smooth)
+
+#are there missing values?
+# Check for missing values in the avg_co2_emissions column
+missing_indices <- which(is.na(grouped_top_regions_smooth$avg_co2_emissions))
+
+# Get the years corresponding to the missing values
+years_with_missing <- grouped_top_regions_smooth$year[missing_indices]
+region_with_missing <- grouped_top_regions_smooth$region[missing_indices]
+# Print the years with missing values
+
+print(paste("In the year", years_with_missing, "there where missing values for", region_with_missing))
 ```
 
 
 Plot
 
 ```{r}
-g_country <- long_df_countries_smooth %>% 
+g_country <- top_countries_smooth %>% 
   ggplot(
     aes(
       year, co2_emissions_metric_tons_per_capita, 
@@ -379,7 +539,7 @@ g_country <- long_df_countries_smooth %>%
     name = NULL
   ) 
 
-g_region <- grouped_long_df_regions_smooth %>% 
+g_region <- grouped_top_regions_smooth %>% 
   ggplot(
     aes(
       year, avg_co2_emissions, 
@@ -432,18 +592,53 @@ g_region <- g_region +
     caption = "Visualization by Anabella Varela  •  Data obtained from Kaggle • "
   ) 
 g_region
+
 ```
+
+
+### Add anotation of missing values for Middle East in the years 1992 to 1994
 
 ```{r}
 
-ggsave("country_plot.png", plot = g_country, width = 10, height = 6, dpi = 600)
-ggsave("region_plot.png", plot = g_region, width = 10, height = 6, dpi = 600)
+g_region <- g_region +
+    geom_vline(xintercept = 1992 : 1994, # draw vertical lines (xintercept) at specific x-coordinates. 
+    color = "black", 
+    size = .5,
+    linetype = "dotted") +
+  annotate(
+    "text",
+    x = 1993,
+    y = -80,  # Adjust the y-coordinate to position the text at the bottom of the plot
+    label = "Missing data",
+    color = "black",
+    size = 3,
+    hjust = 0.5,  # Center the text horizontally
+    vjust = -0.5,  # Place the text just below the plot
+    family = "sans",  # Font family for the text
+  ) 
+  
+
+
+g_region
+
+```
+
+
+
+```{r}
+
+ggsave("Fig4.png", plot = g_country, width = 10, height = 6, dpi = 600)
+ggsave("Fig5.png", plot = g_region, width = 10, height = 6, dpi = 600)
 
 
 
 ```
 
-
+##Principal Component Analysis (PCA) 
+PCA is a widely used statistical technique in data analysis. It is used for dimensionality reduction and pattern recognition in high-dimensional data. PCA transforms the original variables into a new set of uncorrelated variables called principal components, which capture the most significant variability in the data.
+```{r}
+###will make 
+```
 
 
 
