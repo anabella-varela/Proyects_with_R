@@ -7,6 +7,8 @@
 - [Task](#task)
 - [Tools](#tools)
 - [Key Insights](#insights)
+- [Google slides presentation](#ppt)
+
 
 
 ## Introduction
@@ -35,3 +37,7 @@ I created five figures that portrayed the trends in CO2 emissions across various
 -Although the top three countries with the highest CO2 emissions demonstrated a decline in emissions since 2000 (see Figure 4), the trends across the top three regions are less apparent ( Figure 5).
 ![Alt text](Fig4.png)
 ![Alt text](Fig5.png)
+
+## Slides
+[Google slides presentation](https://docs.google.com/presentation/d/1v19GGn3EvbPBqgHEjUh3ap2xgAp8zH9sCHrOyp3j5o4/edit?usp=sharing)
+
