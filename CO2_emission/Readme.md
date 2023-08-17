@@ -7,7 +7,7 @@
 - [Task](#task)
 - [Tools](#tools)
 - [Key Insights](#insights)
-- [Google slides presentation](#ppt)
+- [Google slides presentation](#slides)
 
 
 
