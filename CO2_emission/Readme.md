@@ -39,5 +39,5 @@ I created five figures that portrayed the trends in CO2 emissions across various
 ![Alt text](Fig5.png)
 
 ## Slides
-[Google slides presentation](https://docs.google.com/presentation/d/1v19GGn3EvbPBqgHEjUh3ap2xgAp8zH9sCHrOyp3j5o4/edit?usp=sharing)
+More graphics can be seen in this [Google slides presentation](https://docs.google.com/presentation/d/1v19GGn3EvbPBqgHEjUh3ap2xgAp8zH9sCHrOyp3j5o4/edit?usp=sharing)
 
