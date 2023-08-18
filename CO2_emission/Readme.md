@@ -7,7 +7,7 @@
 - [Task](#task)
 - [Tools](#tools)
 - [Key Insights](#insights)
-- [Google slides presentation](#slides)
+
 
 
 
@@ -27,17 +27,17 @@ I created five figures that portrayed the trends in CO2 emissions across various
 
 
 ## Insights
--The analysis reveals a decline in the global mean CO2 emissions per capita from 4.38 metric tons in 1990 to 4.06 metric tons in 2019. 
-- Over the years, the mean and minimum emission values have displayed relative stability, while the maximum values experienced a peak in 2000 (see Figure 1).
+- The main findings from the EDA can be seen in this [Google slides presentation](https://docs.google.com/presentation/d/1v19GGn3EvbPBqgHEjUh3ap2xgAp8zH9sCHrOyp3j5o4/edit?usp=sharing)
+Figures created with this script: 
+- Figure 1: line chart
 ![Alt text](Fig1.png)
-- Significant disparities in CO2 emissions are evident among world regions and countries. Notably, the Middle East & North Africa region exhibits the highest CO2 emissions, followed by North America and Europe. Conversely, South Asia and Sub-Saharan Africa have the lowest emissions (see Figure 2).
+- Figure 2: horizontal bar chart
 ![Alt text](Fig2.png)
-- Focusing on the Middle East & North Africa region, specific attention should be directed towards Qatar, United Arab Emirates, Kuwait, and Bahrain to substantially reduce the emissions of the region (see Figure 3).
+- Figure 3: Box plot with jittered data points to see the nations that have stood out as significant contributors to elevated regional average emissions.
 ![Alt text](Fig3.png)
--Although the top three countries with the highest CO2 emissions demonstrated a decline in emissions since 2000 (see Figure 4), the trends across the top three regions are less apparent ( Figure 5).
+- Figure 4 and 5: stream graph
 ![Alt text](Fig4.png)
 ![Alt text](Fig5.png)
 
-## Slides
-More graphics can be seen in this [Google slides presentation](https://docs.google.com/presentation/d/1v19GGn3EvbPBqgHEjUh3ap2xgAp8zH9sCHrOyp3j5o4/edit?usp=sharing)
+
 
